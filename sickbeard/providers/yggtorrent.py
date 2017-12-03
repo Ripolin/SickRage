@@ -48,10 +48,11 @@ class YggTorrentProvider(TorrentProvider):  # pylint: disable=too-many-instance-
         self.minleech = None
 
         # URLs
-        self.url = 'https://ww1.yggtorrent.com/'
+        self.url = 'https://yggtorrent.com/'
         self.urls = {
             'login': urljoin(self.url, 'user/login'),
             'search': urljoin(self.url, 'engine/search'),
+            'download': urljoin(self.url, 'engine/download_torrent?id={0}')
         }
 
         # Proper Strings
@@ -121,16 +122,11 @@ class YggTorrentProvider(TorrentProvider):  # pylint: disable=too-many-instance-
                             cells = result('td')
                             if len(cells) < 5:
                                 continue
-                            
-                            download_url = ""
-                            title = cells[0].find('a', class_='torrent-name').get_text(strip=True)
-                            for download_img in cells[0].select('a[href] img'):                                   
-                                if download_img['src'] == urljoin(self.url,"static/icons/icon_download.gif"):
-                                    download_url = urljoin(self.url, download_img.parent['href'])
-                                    break
 
-                            if not (title and download_url):
-                                continue
+                            link = cells[0].find('a', class_='torrent-name')
+                            title = link.get_text(strip=True)
+                            id_ = try_int(re.search('/(\d+)-[^/\s]+$', link['href']).group(1))
+                            download_url = self.urls['download'].format(id_)
 
                             seeders = try_int(cells[4].get_text(strip=True))
                             leechers = try_int(cells[5].get_text(strip=True))
